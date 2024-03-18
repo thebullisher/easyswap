@@ -1,0 +1,21 @@
+name: "4 [on_call] tests"
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    name: "Run tests"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'yarn'
+      - run: yarn install --frozen-lockfile --immutable
+      - run: yarn lint
+      - run: yarn test
+      - run: yarn build
+        env:
+          CI: true

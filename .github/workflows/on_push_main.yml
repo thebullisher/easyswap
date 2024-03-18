@@ -1,0 +1,27 @@
+name: '0 [on_push] Main workflow'
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "**"
+  pull_request:
+    branches-ignore:
+      - gh-pages
+
+concurrency:
+  group: main-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref == 'refs/heads/main' && false || true }}
+
+permissions: write-all
+
+jobs:
+  test:
+    name: "Test source code"
+    uses: ./.github/workflows/on_call_test.yml
+  deploy-documentation:
+    needs: test
+    name: "Deploy documentation"
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/on_call_deploy_page.yml

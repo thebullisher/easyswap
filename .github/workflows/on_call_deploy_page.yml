@@ -1,0 +1,34 @@
+name: '4 [on_call] Deploy page'
+
+on:
+  workflow_call:
+
+jobs:
+  public:
+    name: 'Check repository visibility'
+    runs-on: ubuntu-latest
+    outputs:
+      is_public: ${{ steps.visibility.outputs.is_public }}
+    steps:
+      - run: echo is_public=$([[ $(curl -I https://github.com/${{ github.repository }} -w '%{response_code}' -so /dev/null) = '200' ]] && echo true || echo false) | tee -a $GITHUB_OUTPUT
+        id: 'visibility'
+  deploy:
+    name: 'Deploy public documentation'
+    needs: [public]
+    if: ${{ needs.public.outputs.is_public == 'true' }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'yarn'
+      - run: yarn install --frozen-lockfile --immutable
+      - run: yarn build:doc
+      - uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
